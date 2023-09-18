@@ -23,7 +23,7 @@ To use or experiment with a particular data structure, follow these steps:
    python main.py
    ```
 
-5. A graphical user interface (GUI) will be opened. Add your user with the "add user" button, and then you would have the ability to activate the Automatic renewal process.
+5. A graphical user interface (GUI) will be opened. Add your user with the "add user" button, and then you would have the ability to activate the automatic renewal process.
 
 ---
 Enjoy!

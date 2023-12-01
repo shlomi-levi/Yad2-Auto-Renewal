@@ -12,7 +12,7 @@ To use or experiment with a particular data structure, follow these steps:
    ```console
    git clone https://github.com/shlomi-levi/Yad2-Auto-Renewal.git
    ```
-2. Navigate the the installation folder.
+2. Navigate to the installation folder.
    
 3. Install the needed dependencies:
    ```console
@@ -23,7 +23,7 @@ To use or experiment with a particular data structure, follow these steps:
    python main.py
    ```
 
-5. A graphical user interface (GUI) will be opened. Add your user with the "add user" button, and then you would have the ability to activate the automatic renewal process.
+5. A command line window will open with usage instructions.
 
 ---
 Enjoy!

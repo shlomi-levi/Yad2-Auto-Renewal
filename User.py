@@ -1,5 +1,5 @@
 import Ad
-from Token import Token, TokenTypes
+from Token import Token
 
 class User(object):
     def __init__(self, email:str, accessToken:Token, refreshToken:Token, activeAds:list[Ad]):

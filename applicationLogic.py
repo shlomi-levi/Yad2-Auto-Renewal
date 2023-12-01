@@ -114,6 +114,13 @@ def findIndex(email:str) -> int:
 
     return -1
 
+def getUserObject(email:str) -> User:
+    index = findIndex(email)
+    if index == -1:
+        return None # type: ignore
+
+    return usersList[index]
+
 def activateUser(u:User) -> None:
     global threadCounter
 

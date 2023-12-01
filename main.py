@@ -1,79 +1,168 @@
-import tkinter as tk
 import applicationLogic
-from tkinter import ttk, messagebox
 from User import User
 
-root = tk.Tk()
+OPERATION_ACTIVATE = 1
+OPERATION_DEACTIVATE = 0
 
-def addUser():
-    # Get the cursor's position
-    x, y = root.winfo_pointerxy()
+def viewUsers():
+    users:list[User] = applicationLogic.getUsersList()
 
-    # Create a modal popup for entering email and password
-    popup = tk.Toplevel(root)
-    popup.title("Add User")
-    popup.grab_set()  # Make the popup modal
+    numofUsers = len(users)
 
-    # Set the popup's position relative to the cursor
-    popup.geometry(f"+{x}+{y}")
+    if not numofUsers:
+        print("There are currently no users in the bot")
+        return
 
-    # Create and configure labels and entry fields for email and password with larger fonts
-    email_label = tk.Label(popup, text="Email:", font=("Arial", 14))
-    email_label.pack()
-    email_entry = tk.Entry(popup, font=("Arial", 14))
-    email_entry.pack()
+    print(f"There are currently {numofUsers} in the bot:")
 
-    password_label = tk.Label(popup, text="Password:", font=("Arial", 14))
-    password_label.pack()
-    password_entry = tk.Entry(popup, show="*", font=("Arial", 14))  # Use "*" to hide password characters
-    password_entry.pack()
+    for user in users:
+        activeStatus = applicationLogic.isUserThreadActive(user)
+        activeString = "Active" if activeStatus else "Not active"
+        print(f"{user.email} ({activeString})")
 
-    def save_user():
-        email = email_entry.get()
-        password = password_entry.get()
+def activateUser(email:str):
+    userObj:User = applicationLogic.getUserObject(email)
 
-        errText = ""
+    if not userObj:
+        print("Error: unknown user")
+        return
 
-        if email and password:
-            if applicationLogic.emailExists(email):
-                errText += "A user with this email address already exists!"
+    activateOrDeactivateUser(userObj, OPERATION_ACTIVATE)
 
-            elif not applicationLogic.addUser(email, password):
-                errText += "Can't connect to Yad2 server. email/password might be incorrect."
-                x, y = root.winfo_pointerxy()
+def deactivateUser(email:str):
+    userObj: User = applicationLogic.getUserObject(email)
 
-                error_popup = tk.Toplevel(popup)
-                error_popup.geometry(f"+{x}+{y}")
+    if not userObj:
+        print("Error: unknown user")
+        return
 
-                error_popup.geometry("300x100")
-                error_popup.title("Error")
-                error_popup.geometry("300x100")
-                error_label = tk.Label(error_popup, text=errText, font=("Arial", 14))
-                error_label.pack(pady=10)
-                error_popup.transient(popup)  # Make the error popup dependent on the "Add User" popup
+    activateOrDeactivateUser(userObj, OPERATION_DEACTIVATE)
 
-            else:
-                popup.destroy()
-                refreshGUI()
+def removeUser(email:str):
+    userObj: User = applicationLogic.getUserObject(email)
 
-        else:
-            tk.messagebox.showerror("Error", "Both email and password are required.")
+    if not userObj:
+        print("Error: unknown user")
+        return
 
-    save_button = tk.Button(popup, text="Save", command=save_user, font=("Arial", 14))
-    save_button.pack(pady=10)  # Add space between the password field and the button
+    applicationLogic.removeUser(userObj)
 
-    # Increase the size of the popup window
-    popup.geometry("400x200")
+def removeAll():
+    users:list[User] = applicationLogic.getUsersList()
 
-    popup.transient(root)  # Make the popup dependent on the main window
+    for user in users:
+        applicationLogic.removeUser(user)
 
-def toggleActivation(status, button_var):
-    # Implement the logic to toggle user activation status here
-    # Update the text of the button_var based on the updated user status
-    button_var.set("Deactivate" if status else "Activate")
+def activateAll():
+    users: list[User] = applicationLogic.getUsersList()
 
-def activateOrDeactivateUser(u:User, bv):
+    for user in users:
+        userActive = applicationLogic.isUserThreadActive(user)
+
+        if userActive:
+            continue
+
+        activateUser(user.email)
+
+def deactivateAll():
+    users: list[User] = applicationLogic.getUsersList()
+
+    for user in users:
+        userActive = applicationLogic.isUserThreadActive(user)
+
+        if not userActive:
+            continue
+
+        deactivateUser(user.email)
+
+def getInput():
+    inp = input()
+
+    # Command Name -> (Number of arguments [including command name], Handling function)
+    commandMap:dict[str, tuple[int, callable]] = {
+        "help": (1, showHelp),
+        "users": (1, viewUsers),
+        "quit": (1, quit),
+        "activate": (2, activateUser),
+        "deactivate": (2, deactivateUser),
+        "add": (3, addHandler),
+        "remove": (2, removeUser),
+        "removeall": (1, removeAll),
+        "activateall": (1, activateAll),
+        "deactivateall": (1, deactivateAll)
+    }
+
+    parsedLine = inp.split()
+
+    command, numOfArguments = parsedLine[0], len(parsedLine)
+
+    if command not in commandMap:
+        print("Error: invalid command")
+        return
+
+    requestedCommNumOfArgs, handlingFunc = commandMap[command]
+
+    if numOfArguments != requestedCommNumOfArgs:
+        print("Error: invalid number of arguments")
+        return
+
+    if numOfArguments == 1:
+        handlingFunc()
+
+    elif numOfArguments == 2:
+        handlingFunc(parsedLine[1])
+
+    elif numOfArguments == 3:
+        handlingFunc(parsedLine[1], parsedLine[2])
+
+def showHelp():
+    print("""Welcome to the Yad 2 Auto Bump program!\n
+    Here are the available commands:\n
+    - 'help': Displays a list of available commands.\n
+    - 'add <email> <password>': Adds a user to the bot.\n
+    - 'users': Shows a list of users currently in the bot.\n
+    - 'activate <email>': Initiates the bot for a specific user (multiple users can run simultaneously).\n
+    - 'activateall': Activates the bot for all the users in the system\n
+    - 'deactivate <email>': Deactivates the bot for the specified user\n
+    - 'deactivateall': Deactivates the bot for all the users in the system \n
+    - 'remove <email>': Removes the user from the bot\n
+    - 'removeall': Removes all the users from the bot\n
+    - 'quit': Terminates the program (alternatively, you can close the command-line window)
+    """)
+
+def main():
+    showHelp()
+    applicationLogic.init()
+
+    while True:
+        getInput()
+
+def addHandler(email:str, password:str):
+    if not email or not password:
+        print("Error: invalid input. Current usage is 'add <email> <password>'")
+        return
+
+    if applicationLogic.emailExists(email):
+        print("Error: a user with this email address already exists")
+        return
+
+    status = applicationLogic.addUser(email, password)
+
+    if not status:
+        print("Error: cannot authorize on Yad2 server - email/password might be incorrect, or Yad2's server is currently down")
+
+    print("User added successfully.")
+
+def activateOrDeactivateUser(u:User, operation):
     userActive = applicationLogic.isUserThreadActive(u)
+
+    if userActive and operation == OPERATION_ACTIVATE:
+        print("Error: trying to activate the bot for a user that is already activated")
+        return
+
+    if not userActive and operation == OPERATION_DEACTIVATE:
+        print("Error: trying to deactivate the bot for a user that is not currently activated")
+        return
 
     if userActive:
         applicationLogic.deactivateUser(u)
@@ -81,72 +170,5 @@ def activateOrDeactivateUser(u:User, bv):
     else:
         applicationLogic.activateUser(u)
 
-    newStatus = not userActive
-
-    toggleActivation(newStatus, bv)
-
-def refreshGUI():
-    global root
-
-    root.withdraw()
-    root = tk.Tk()
-    initGUI()
-
-def removeUser(u:User) -> None:
-    applicationLogic.removeUser(u)
-    refreshGUI()
-
-
-def initGUI():
-    root.title("Yad2 Auto Renewal")
-
-    # Set the initial window size
-    root.geometry("420x300")
-
-    # Create and configure the label with the text "Yad2 Auto Bump"
-    label = tk.Label(root, text="Yad2 Auto Bump", font=("Arial", 20), fg="red")
-    label.grid(row=0, column=0, columnspan=3, padx=10, pady=20, sticky="n")
-
-    # Create and configure the buttons using ttk for a different style
-    button_font = ("Arial", 14)  # Adjust font size as needed
-
-    style = ttk.Style()
-    style.configure("TButton", font=button_font)
-
-    usersList = applicationLogic.getUsersList()
-
-    # Create labels, activate buttons, and delete buttons in a loop
-    row = 0
-    for user in usersList:
-        row += 1
-        label = tk.Label(root, text=user.email, font=("Arial", 14))
-        label.grid(row=row, column=0, padx=10, pady=5, sticky="w")
-
-        userActive = applicationLogic.isUserThreadActive(user)
-
-        button_text = "Deactivate" if userActive else "Activate"
-        button_var = tk.StringVar(value=button_text)
-
-        activateOrDeactivate_button = tk.Button(root, textvariable=button_var, font=("Arial", 12), command=lambda u=user, bv=button_var: activateOrDeactivateUser(user, bv))
-        activateOrDeactivate_button.grid(row=row, column=1, padx=(0, 5), pady=5, sticky="e")
-
-        delete_button = tk.Button(root, text="Delete", font=("Arial", 12), command=lambda u=user:removeUser(u))
-        delete_button.grid(row=row, column=2, padx=(5, 10), pady=5, sticky="e")
-
-    # "Add User" button
-    add_user_button = tk.Button(root, text="Add User", command=addUser, font=("Arial", 12))
-    add_user_button.grid(row=row + 1, column=0, columnspan=3, padx=10, pady=10, sticky="n")
-
-    # Configure column weights to center-align the label and the button
-    root.grid_columnconfigure(0, weight=1)
-    root.grid_columnconfigure(1, weight=1)
-    root.grid_columnconfigure(2, weight=1)
-
-    # Start the Tkinter main loop
-    root.mainloop()
-
-# Initialize application logic
-applicationLogic.init()
-
-initGUI()
-# Create the main window
+if __name__ == '__main__':
+    main()

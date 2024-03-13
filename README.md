@@ -24,10 +24,6 @@ To use or experiment with a particular data structure, follow these steps:
    ```
 
 5. A command line window will open with usage instructions.
-
 ---
+
 Enjoy!
-
-Created by: Shlomi Levi
-
-GitHub: [@shlomi-levi](https://github.com/shlomi-levi)

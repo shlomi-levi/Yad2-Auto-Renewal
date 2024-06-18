@@ -9,7 +9,7 @@ import Yad2Constants
 
 from ThreadInfo import ThreadInfo
 from Token import Token, TokenTypes
-from Ad import Ad
+from ad import Ad
 from User import User
 
 dataFile = 'data.pickle'

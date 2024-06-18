@@ -1,11 +1,11 @@
-import applicationLogic
-from User import User
+import logic
+from user import User
 
 OPERATION_ACTIVATE = 1
 OPERATION_DEACTIVATE = 0
 
 def viewUsers():
-    users:list[User] = applicationLogic.getUsersList()
+    users:list[User] = logic.getUsersList()
 
     numofUsers = len(users)
 
@@ -16,12 +16,12 @@ def viewUsers():
     print(f"There are currently {numofUsers} in the bot:")
 
     for user in users:
-        activeStatus = applicationLogic.isUserThreadActive(user)
+        activeStatus = logic.isUserThreadActive(user)
         activeString = "Active" if activeStatus else "Not active"
         print(f"{user.email} ({activeString})")
 
 def activateUser(email:str):
-    userObj:User = applicationLogic.getUserObject(email)
+    userObj:User = logic.getUserObject(email)
 
     if not userObj:
         print("Error: unknown user")
@@ -30,7 +30,7 @@ def activateUser(email:str):
     activateOrDeactivateUser(userObj, OPERATION_ACTIVATE)
 
 def deactivateUser(email:str):
-    userObj: User = applicationLogic.getUserObject(email)
+    userObj: User = logic.getUserObject(email)
 
     if not userObj:
         print("Error: unknown user")
@@ -39,25 +39,25 @@ def deactivateUser(email:str):
     activateOrDeactivateUser(userObj, OPERATION_DEACTIVATE)
 
 def removeUser(email:str):
-    userObj: User = applicationLogic.getUserObject(email)
+    userObj: User = logic.getUserObject(email)
 
     if not userObj:
         print("Error: unknown user")
         return
 
-    applicationLogic.removeUser(userObj)
+    logic.removeUser(userObj)
 
 def removeAll():
-    users:list[User] = applicationLogic.getUsersList()
+    users:list[User] = logic.getUsersList()
 
     for user in users:
-        applicationLogic.removeUser(user)
+        logic.removeUser(user)
 
 def activateAll():
-    users: list[User] = applicationLogic.getUsersList()
+    users: list[User] = logic.getUsersList()
 
     for user in users:
-        userActive = applicationLogic.isUserThreadActive(user)
+        userActive = logic.isUserThreadActive(user)
 
         if userActive:
             continue
@@ -65,10 +65,10 @@ def activateAll():
         activateUser(user.email)
 
 def deactivateAll():
-    users: list[User] = applicationLogic.getUsersList()
+    users: list[User] = logic.getUsersList()
 
     for user in users:
-        userActive = applicationLogic.isUserThreadActive(user)
+        userActive = logic.isUserThreadActive(user)
 
         if not userActive:
             continue
@@ -132,7 +132,7 @@ def showHelp():
 
 def main():
     showHelp()
-    applicationLogic.init()
+    logic.init()
 
     while True:
         getInput()
@@ -142,11 +142,11 @@ def addHandler(email:str, password:str):
         print("Error: invalid input. Current usage is 'add <email> <password>'")
         return
 
-    if applicationLogic.emailExists(email):
+    if logic.emailExists(email):
         print("Error: a user with this email address already exists")
         return
 
-    status = applicationLogic.addUser(email, password)
+    status = logic.addUser(email, password)
 
     if not status:
         print("Error: cannot authorize on Yad2 server - email/password might be incorrect, or Yad2's server is currently down")
@@ -154,7 +154,7 @@ def addHandler(email:str, password:str):
     print("User added successfully.")
 
 def activateOrDeactivateUser(u:User, operation):
-    userActive = applicationLogic.isUserThreadActive(u)
+    userActive = logic.isUserThreadActive(u)
 
     if userActive and operation == OPERATION_ACTIVATE:
         print("Error: trying to activate the bot for a user that is already activated")
@@ -165,10 +165,10 @@ def activateOrDeactivateUser(u:User, operation):
         return
 
     if userActive:
-        applicationLogic.deactivateUser(u)
+        logic.deactivateUser(u)
 
     else:
-        applicationLogic.activateUser(u)
+        logic.activateUser(u)
 
 if __name__ == '__main__':
     main()

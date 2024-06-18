@@ -5,12 +5,12 @@ import requests
 import threading
 import time
 import copy
-import Yad2Constants
+import constants
 
-from ThreadInfo import ThreadInfo
-from Token import Token, TokenTypes
+from thread_info import ThreadInfo
+from tokens import Token, TokenTypes
 from ad import Ad
-from User import User
+from user import User
 
 dataFile = 'data.pickle'
 
@@ -30,11 +30,11 @@ def getCurrentUnixTime():
     return int(math.floor(time.time()))
 
 def getNewTokens(u: User) -> None:
-    URL:str = Yad2Constants.TOKEN_REFRESH_ADDRESS
+    URL:str = constants.TOKEN_REFRESH_ADDRESS
     session = requests.session()
 
     try:
-        response = session.post(URL, cookies={Yad2Constants.REFRESH_TOKEN_STRING: u.refreshToken.tokenID})
+        response = session.post(URL, cookies={constants.REFRESH_TOKEN_STRING: u.refreshToken.tokenID})
 
         if response.status_code < 200 or response.status_code > 299:
             return
@@ -43,10 +43,10 @@ def getNewTokens(u: User) -> None:
         refreshToken: Token = None  # type: ignore
 
         for cookie in session.cookies:
-            if cookie.name == Yad2Constants.ACCESS_TOKEN_STRING:
+            if cookie.name == constants.ACCESS_TOKEN_STRING:
                 accessToken: Token = Token(TokenTypes.ACCESS, cookie.value, cookie.expires)
 
-            elif cookie.name == Yad2Constants.REFRESH_TOKEN_STRING:
+            elif cookie.name == constants.REFRESH_TOKEN_STRING:
                 refreshToken: Token = Token(TokenTypes.REFRESH, cookie.value, cookie.expires)
 
         if session:
@@ -72,23 +72,23 @@ def verifyTokensValidity(user:User):
 def bumpAd(ad:Ad, user:User) -> None:
     adID = ad.adID
 
-    requestURL:str = f"{Yad2Constants.BUMP_AD_URL_PART_1}/{adID}/{Yad2Constants.BUMP_AD_URL_PART_2}"
+    requestURL:str = f"{constants.BUMP_AD_URL_PART_1}/{adID}/{constants.BUMP_AD_URL_PART_2}"
 
     verifyTokensValidity(user)
 
     session = requests.Session()
-    response = session.put(requestURL, cookies = { Yad2Constants.ACCESS_TOKEN_STRING: user.accessToken.tokenID, Yad2Constants.REFRESH_TOKEN_STRING: user.refreshToken.tokenID})
+    response = session.put(requestURL, cookies = { constants.ACCESS_TOKEN_STRING: user.accessToken.tokenID, constants.REFRESH_TOKEN_STRING: user.refreshToken.tokenID})
 
     for cookie in session.cookies:
-        if cookie.name == Yad2Constants.ACCESS_TOKEN_STRING:
+        if cookie.name == constants.ACCESS_TOKEN_STRING:
             user.accessToken = Token(TokenTypes.ACCESS, cookie.value, cookie.expires)
 
-        elif cookie.name == Yad2Constants.REFRESH_TOKEN_STRING:
+        elif cookie.name == constants.REFRESH_TOKEN_STRING:
             user.refreshToken = Token(TokenTypes.REFRESH, cookie.value, cookie.expires)
 
     response = json.loads(response.text)
 
-    nextPromotion = response.get(Yad2Constants.BUMP_AD_RESPONSE_ROOT, {}).get(Yad2Constants.BUMP_AD_RESPONSE_NEXT_PROMOTION_FIELD, {})
+    nextPromotion = response.get(constants.BUMP_AD_RESPONSE_ROOT, {}).get(constants.BUMP_AD_RESPONSE_NEXT_PROMOTION_FIELD, {})
 
     ad.nextPromotionUnix = getUnixTime(nextPromotion)
 
@@ -188,10 +188,10 @@ class LoginRequestOutput(object):
         self.refreshToken:Token = refreshToken
 
 def sendLoginRequest(username:str, pw:str) -> LoginRequestOutput:
-    URL:str = Yad2Constants.LOGIN_URL
+    URL:str = constants.LOGIN_URL
     session = requests.session()
 
-    payload = { Yad2Constants.LOGIN_REQUEST_EMAIL_FIELD_STRING: username, Yad2Constants.LOGIN_REQUEST_PASSWORD_FIELD_STRING: pw}
+    payload = { constants.LOGIN_REQUEST_EMAIL_FIELD_STRING: username, constants.LOGIN_REQUEST_PASSWORD_FIELD_STRING: pw}
 
     try:
         response = session.post(URL, json = payload)
@@ -203,10 +203,10 @@ def sendLoginRequest(username:str, pw:str) -> LoginRequestOutput:
         refreshToken:Token = None # type: ignore
 
         for cookie in session.cookies:
-            if cookie.name == Yad2Constants.ACCESS_TOKEN_STRING:
+            if cookie.name == constants.ACCESS_TOKEN_STRING:
                 accessToken:Token = Token(TokenTypes.ACCESS, cookie.value, cookie.expires)
 
-            elif cookie.name == Yad2Constants.REFRESH_TOKEN_STRING:
+            elif cookie.name == constants.REFRESH_TOKEN_STRING:
                 refreshToken:Token = Token(TokenTypes.REFRESH, cookie.value, cookie.expires)
 
         if session:
@@ -221,21 +221,21 @@ def sendLoginRequest(username:str, pw:str) -> LoginRequestOutput:
         return LoginRequestOutput(False, None, None)  # type: ignore
 
 def getActiveAds(user:User) -> None:
-    URL = Yad2Constants.ACTIVE_ADS_ADDRESS
+    URL = constants.ACTIVE_ADS_ADDRESS
 
     verifyTokensValidity(user)
 
-    response = requests.get(URL, cookies = { Yad2Constants.ACCESS_TOKEN_STRING: user.accessToken.tokenID, Yad2Constants.REFRESH_TOKEN_STRING: user.refreshToken.tokenID})
+    response = requests.get(URL, cookies = { constants.ACCESS_TOKEN_STRING: user.accessToken.tokenID, constants.REFRESH_TOKEN_STRING: user.refreshToken.tokenID})
 
     response = json.loads(response.text)
 
-    items = response.get(Yad2Constants.ACTIVE_ADS_RESPONSE_ROOT, {}).get(Yad2Constants.ACTIVE_ADS_RESPONSE_CHILD, {})
+    items = response.get(constants.ACTIVE_ADS_RESPONSE_ROOT, {}).get(constants.ACTIVE_ADS_RESPONSE_CHILD, {})
 
     tempActiveAds = []
 
     for ad in items:
-        nextPromotion = getUnixTime(ad[Yad2Constants.NEXT_AD_PROMOTION_STRING])
-        tempActiveAds.append(Ad(ad[Yad2Constants.AD_ID_STRING], nextPromotion))
+        nextPromotion = getUnixTime(ad[constants.NEXT_AD_PROMOTION_STRING])
+        tempActiveAds.append(Ad(ad[constants.AD_ID_STRING], nextPromotion))
 
     user.activeAds = tempActiveAds
 
